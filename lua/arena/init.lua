@@ -93,7 +93,7 @@ local config = {
       })
       vim.fn.cursor(info.lnum, 0)
     end),
-    [";"] = M.action(function(buf, info)
+    ["'"] = M.action(function(buf, info)
       vim.api.nvim_set_current_buf(buf)
       vim.fn.cursor(info.lnum, 0)
     end),
