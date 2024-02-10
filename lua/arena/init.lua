@@ -195,6 +195,14 @@ function M.open()
     return
   end
 
+  local height = 1
+
+  if #contents > 0 then
+    height = #contents
+  else
+    contents = { "No recent files" }
+  end
+
   -- get the character count of the longest line in contents
   local longest_line = 0
   for _, item in ipairs(contents) do
@@ -210,7 +218,7 @@ function M.open()
     col = (vim.o.columns - config.window.width) / 2,
     -- width = config.window.width,
     -- height = config.window.height,
-    height = #contents,
+    height = height,
     width = longest_line + 9,
     title = " Arena ",
     title_pos = "left",
