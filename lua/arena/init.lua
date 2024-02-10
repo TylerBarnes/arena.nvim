@@ -113,6 +113,7 @@ local config = {
       M.pin(buf)
     end),
     ["q"] = M.close,
+    ["l"] = M.close,
     ["<esc>"] = M.close,
   },
 
