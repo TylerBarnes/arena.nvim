@@ -36,7 +36,7 @@ function M.truncate_paths(paths, opts)
     local found = false
     local ancstrs = ancestors(path)
     for j = #ancstrs, 1, -1 do
-      local anc = ancstrs[j]
+      local anc = ancstrs[j - 1] or ancstrs[j]
       paths[i] = anc
       if seen[anc] == 1 then
         found = true

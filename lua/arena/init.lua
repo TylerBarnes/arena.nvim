@@ -55,7 +55,7 @@ local config = {
   per_project = false,
 
   window = {
-    width = 60,
+    width = 40,
     height = 10,
     border = "rounded",
 
@@ -144,7 +144,7 @@ function M.open()
       return false
     end
 
-    return vim.api.nvim_buf_is_loaded(data.buf)
+    return true
   end, config.max_items)
 
   buffers = {}
@@ -191,19 +191,65 @@ function M.open()
     return
   end
 
+  -- get the character count of the longest line in contents
+  local longest_line = 0
+  for _, item in ipairs(contents) do
+    if #item > longest_line then
+      longest_line = #item
+    end
+  end
+
   bufnr = vim.api.nvim_create_buf(false, false)
-  winnr = vim.api.nvim_open_win(bufnr, false, {
+  winnr = vim.api.nvim_open_win(bufnr, true, {
     relative = "editor",
     row = ((vim.o.lines - config.window.height) / 2) - 1,
     col = (vim.o.columns - config.window.width) / 2,
-    width = config.window.width,
-    height = config.window.height,
-    title = "Arena",
-    title_pos = "center",
+    -- width = config.window.width,
+    -- height = config.window.height,
+    height = #contents,
+    width = longest_line + 9,
+    title = " Arena ",
+    title_pos = "left",
     border = config.window.border,
+    style = "minimal",
   })
 
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, contents)
+  vim.api.nvim_win_set_option(winnr, "number", false)
+  vim.api.nvim_win_set_option(winnr, "relativenumber", false)
+  vim.api.nvim_win_set_option(winnr, "cursorline", true)
+
+  local deviconsOk, _ = pcall(require, "nvim-web-devicons")
+
+  if deviconsOk then
+    local function get_file_extension(file_path)
+      return file_path:match("^.+%.(%w+)$")
+    end
+
+    local devicons = require("nvim-web-devicons")
+    for i, item in ipairs(contents) do
+      local icon, _icon_color = devicons.get_icon_color(
+        item,
+        get_file_extension(item),
+        { default = true }
+      )
+      local _, iconhl =
+        devicons.get_icon(item, get_file_extension(item), { default = true })
+      if icon then
+        local start_col = 0
+        local end_col = #icon
+        vim.api.nvim_buf_add_highlight(bufnr, 0, iconhl, i, start_col, end_col)
+        contents[i] = icon .. "  " .. item
+      end
+    end
+  end
+
+  local padded_contents = {}
+
+  for _, item in ipairs(contents) do
+    table.insert(padded_contents, "   " .. item)
+  end
+
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, padded_contents)
 
   -- Buffer options
   vim.api.nvim_buf_set_option(bufnr, "filetype", "arena")
@@ -310,6 +356,42 @@ function M.setup(opts)
 end
 
 local group = vim.api.nvim_create_augroup("arena", { clear = true })
+
+vim.api.nvim_create_autocmd("BufWinEnter", {
+  group = group,
+  callback = function(data)
+    if data.file ~= "" and vim.o.buftype == "" then
+      frecency.update_item(data.file, { buf = data.buf })
+      bufnames[data.buf] = data.file
+    end
+  end,
+})
+
+local did_run = false
+vim.api.nvim_create_autocmd("SessionLoadPost", {
+  group = group,
+  callback = function()
+    vim.defer_fn(function()
+      -- only run once SessionLoadPost can be called multiple times
+      if did_run then
+        return
+      end
+      did_run = true
+
+      -- load all buffers into frecency
+      -- get buffers from nvim api
+      local bufs = vim.api.nvim_list_bufs()
+      for _, buf in ipairs(bufs) do
+        local name = vim.fn.bufname(buf)
+        if name ~= "" then
+          local filepath = vim.api.nvim_buf_get_name(buf)
+          frecency.update_item(filepath, { buf = buf })
+          bufnames[buf] = name
+        end
+      end
+    end, 100)
+  end,
+})
 vim.api.nvim_create_autocmd("BufWinEnter", {
   group = group,
   callback = function(data)
