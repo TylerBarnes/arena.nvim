@@ -216,7 +216,7 @@ function M.open()
     -- height = config.window.height,
     height = height,
     width = longest_line + 9,
-    title = " Arena ",
+    title = " Frecent buffers (Arena) ",
     title_pos = "left",
     border = config.window.border,
     style = "minimal",
