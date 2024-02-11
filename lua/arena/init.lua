@@ -436,31 +436,6 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
   end,
 })
 
-local did_run = false
-vim.api.nvim_create_autocmd("SessionLoadPost", {
-  group = group,
-  callback = function()
-    vim.defer_fn(function()
-      -- only run once SessionLoadPost can be called multiple times
-      if did_run then
-        return
-      end
-      did_run = true
-
-      -- load all buffers into frecency
-      -- get buffers from nvim api
-      local bufs = vim.api.nvim_list_bufs()
-      for _, buf in ipairs(bufs) do
-        local name = vim.fn.bufname(buf)
-        if name ~= "" then
-          local filepath = vim.api.nvim_buf_get_name(buf)
-          frecency.update_item(filepath, { buf = buf })
-          bufnames[buf] = name
-        end
-      end
-    end, 100)
-  end,
-})
 vim.api.nvim_create_autocmd("BufWinEnter", {
   group = group,
   callback = function(data)

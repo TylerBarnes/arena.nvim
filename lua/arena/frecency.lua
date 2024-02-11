@@ -10,6 +10,62 @@ local config = {
   frequency_factor = 1,
 }
 
+local function writefile(filepath, lines)
+    local file = io.open(filepath, "w") -- Open the file for writing
+    if not file then return nil, "Could not open file for writing" end
+    if type(lines) == "string" then
+      lines = { lines }
+    end
+    for _, line in ipairs(lines) do
+        file:write(line .. "\n") -- Write each line to the file
+    end
+    file:close()
+    return true
+end
+
+local group = vim.api.nvim_create_augroup("arena_sessions", { clear = true })
+
+vim.api.nvim_create_autocmd("ExitPre", {
+  group = group,
+  callback = function()
+    local session_path = vim.api.nvim_eval('v:this_session')
+    if session_path == "" then
+      return
+    end
+    local json_usages = vim.json.encode(usages)
+    if json_usages == "[]" or json_usages == nil then
+      return
+    end
+    writefile(session_path .. "frecency.json", json_usages)
+  end,
+})
+
+local function readfile(filepath)
+    local file = io.open(filepath, "r") -- Open the file for reading
+    if not file then return nil, "Could not open file for reading" end
+    local content = ""
+    for line in file:lines() do
+      content = content .. line .. "\n"
+    end
+    file:close()
+  return content
+end
+
+vim.api.nvim_create_autocmd("SessionLoadPost", {
+  group = group,
+  callback = function()
+    vim.defer_fn(function()
+      local session_path = vim.api.nvim_eval('v:this_session')
+      local json_usages = readfile(session_path .. "frecency.json")
+      if json_usages == nil or json_usages == "[]" then
+        return
+      end
+      usages = vim.json.decode(json_usages)
+    end, 100)
+  end,
+})
+
+
 --- Get the current frecency config.
 --- @return table
 function M.get_config()
