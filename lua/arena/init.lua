@@ -222,6 +222,46 @@ function M.open()
     style = "minimal",
   })
 
+  -- Function to move cursor down or to the first line if on the last line
+  local function move_cursor_down_or_first()
+    local current_line = vim.api.nvim_win_get_cursor(0)[1] -- Get the current line number
+    local total_lines = vim.api.nvim_buf_line_count(0) -- Get the total number of lines in the buffer
+
+    if current_line == total_lines then
+      -- If on the last line, move to the first line
+      vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    else
+      -- Move down one line
+      vim.cmd("normal! j")
+    end
+  end
+
+  local function move_cursor_up_or_last()
+    local current_line = vim.api.nvim_win_get_cursor(0)[1] -- Get the current line number
+    local total_lines = vim.api.nvim_buf_line_count(0) -- Get the total number of lines in the buffer
+
+    if current_line == 1 then
+      -- If on the first line, move to the first line
+      vim.api.nvim_win_set_cursor(0, { total_lines, 0 })
+    else
+      -- Move down one line
+      vim.cmd("normal! k")
+    end
+  end
+
+  -- Key mapping for the custom floating window
+  -- Replace <YOUR_FLOATING_WINDOW_BUFFER_ID> with the actual buffer ID of your floating window
+  vim.api.nvim_buf_set_keymap(bufnr, "n", "j", "", {
+    noremap = true,
+    silent = true,
+    callback = move_cursor_down_or_first,
+  })
+  vim.api.nvim_buf_set_keymap(bufnr, "n", "k", "", {
+    noremap = true,
+    silent = true,
+    callback = move_cursor_up_or_last,
+  })
+
   vim.api.nvim_win_set_option(winnr, "number", false)
   vim.api.nvim_win_set_option(winnr, "relativenumber", false)
   vim.api.nvim_win_set_option(winnr, "cursorline", true)
