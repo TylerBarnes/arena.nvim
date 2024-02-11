@@ -266,26 +266,29 @@ function M.open()
   vim.api.nvim_win_set_option(winnr, "relativenumber", false)
   vim.api.nvim_win_set_option(winnr, "cursorline", true)
 
-  local deviconsOk, _ = pcall(require, "nvim-web-devicons")
+  local devicons_are_installed, _ = pcall(require, "nvim-web-devicons")
+  local devicon_highlights = {}
 
-  if deviconsOk then
+  if devicons_are_installed then
     local function get_file_extension(file_path)
       return file_path:match("^.+%.(%w+)$")
     end
 
     local devicons = require("nvim-web-devicons")
     for i, item in ipairs(contents) do
-      local icon, _icon_color = devicons.get_icon_color(
+      local icon = devicons.get_icon_color(
         item,
         get_file_extension(item),
         { default = true }
       )
       local _, iconhl =
         devicons.get_icon(item, get_file_extension(item), { default = true })
+
       if icon then
-        local start_col = 0
-        local end_col = #icon
-        vim.api.nvim_buf_add_highlight(bufnr, 0, iconhl, i, start_col, end_col)
+        devicon_highlights[i] = {
+          iconhl = iconhl,
+          icon = icon,
+        }
         contents[i] = icon .. "  " .. item
       end
     end
@@ -294,10 +297,28 @@ function M.open()
   local padded_contents = {}
 
   for _, item in ipairs(contents) do
-    table.insert(padded_contents, "   " .. item)
+    table.insert(padded_contents, "  " .. item)
   end
 
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, padded_contents)
+
+  -- set highlights after setting lines or highlights wont work
+  if devicons_are_installed then
+    for i, highlight in ipairs(devicon_highlights) do
+      -- 2 because padding
+      local start_col = 2
+      -- icon could take more than 1 character
+      local end_col = start_col + #highlight.icon
+      vim.api.nvim_buf_add_highlight(
+        bufnr,
+        vim.api.nvim_create_namespace("arena"),
+        highlight.iconhl,
+        i - 1,
+        start_col,
+        end_col
+      )
+    end
+  end
 
   -- Buffer options
   vim.api.nvim_buf_set_option(bufnr, "filetype", "arena")
