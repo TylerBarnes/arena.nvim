@@ -212,8 +212,6 @@ function M.open()
     relative = "editor",
     row = ((vim.o.lines - config.window.height) / 2) - 1,
     col = (vim.o.columns - config.window.width) / 2,
-    -- width = config.window.width,
-    -- height = config.window.height,
     height = height,
     width = longest_line + 9,
     title = " Frecent buffers (Arena) ",
@@ -249,8 +247,6 @@ function M.open()
     end
   end
 
-  -- Key mapping for the custom floating window
-  -- Replace <YOUR_FLOATING_WINDOW_BUFFER_ID> with the actual buffer ID of your floating window
   vim.api.nvim_buf_set_keymap(bufnr, "n", "j", "", {
     noremap = true,
     silent = true,
@@ -425,16 +421,6 @@ function M.setup(opts)
 end
 
 local group = vim.api.nvim_create_augroup("arena", { clear = true })
-
-vim.api.nvim_create_autocmd("BufWinEnter", {
-  group = group,
-  callback = function(data)
-    if data.file ~= "" and vim.o.buftype == "" then
-      frecency.update_item(data.file, { buf = data.buf })
-      bufnames[data.buf] = data.file
-    end
-  end,
-})
 
 vim.api.nvim_create_autocmd("BufWinEnter", {
   group = group,
