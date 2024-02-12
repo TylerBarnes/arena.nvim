@@ -54,14 +54,24 @@ end
 vim.api.nvim_create_autocmd("SessionLoadPost", {
   group = group,
   callback = function()
-    vim.defer_fn(function()
       local session_path = vim.api.nvim_eval('v:this_session')
       local json_usages = readfile(session_path .. "frecency.json")
       if json_usages == nil or json_usages == "[]" then
         return
       end
-      usages = vim.json.decode(json_usages)
-    end, 100)
+      local decoded = vim.json.decode(json_usages)
+
+    -- loop through decoded usages array and grab the new buffer number for each buffer by filename
+    -- we want to restore usages exactly as they were before, but we need to make sure the buffer numbers are correct
+    local new_usages = {}
+    for filename, usage in pairs(decoded) do
+      local buffer_number = vim.fn.bufnr(filename)
+      if buffer_number ~= -1 then
+          usage.meta.buf = buffer_number
+        new_usages[filename] = usage
+      end
+    end
+    usages = new_usages
   end,
 })
 
